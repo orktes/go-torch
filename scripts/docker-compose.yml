@@ -1,0 +1,20 @@
+version: "3"
+
+services:
+  test:
+    image: torch
+    build:
+      dockerfile: ./Dockerfile
+      context: .
+    volumes:
+      - ..:/go/src/github.com/orktes/go-torch
+    command: bash -c "cd /go/src/github.com/orktes/go-torch && go test -race -tags=nogpu ./..."
+
+  benchmark:
+    image: torch
+    build:
+      dockerfile: ./Dockerfile
+      context: .
+    volumes:
+      - ..:/go/src/github.com/orktes/go-torch
+    command: bash -c "cd /go/src/github.com/orktes/go-torch && go test -bench=. -tags=nogpu ./..."
