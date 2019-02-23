@@ -34,4 +34,8 @@ func Test_CompileTorchScript(t *testing.T) {
 		t.Error("1 + 1 should equal 2 but got", res[0].Value())
 	}
 
+	if res[0].Value().([]float32)[1] != 4 {
+		t.Error("2 + 2 should equal 4 but got", res[0].Value())
+	}
+
 }
