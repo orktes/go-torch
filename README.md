@@ -14,7 +14,7 @@ $ go get github.com/orktes/go-torch
 
 ## Usage
 
-go-torch depends on the LibTorch shared libary to be available. For more information refer to https://pytorch.org/cppdocs/ and an example [Dockerfile](https://github.com/orktes/go-torch/blob/master/scripts/Dockerfile) which is used for executing tests for the library.
+go-torch depends on the LibTorch shared library to be available. For more information refer to https://pytorch.org/cppdocs/ and an example [Dockerfile](https://github.com/orktes/go-torch/blob/master/scripts/Dockerfile) which is used for executing tests for the library.
 
 ```go
 import (
