@@ -36,7 +36,7 @@ Supported scalar types:
 
 matrix := []float32{
     []float32{1,2,3},
-    []float32{4,5,6}
+    []float32{4,5,6},
 }
 tensor, _ := torch.NewTensor(matrix)
 tensor.Shape() // [2, 3]
