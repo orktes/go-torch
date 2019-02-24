@@ -71,6 +71,11 @@ func (m *JITModule) RunMethod(method string, inputs ...*Tensor) ([]*Tensor, erro
 	return met.Run(inputs...)
 }
 
+// Forward exectures forward method of the module (forward propagation)
+func (m *JITModule) Forward(inputs ...*Tensor) ([]*Tensor, error) {
+	return m.RunMethod("forward", inputs...)
+}
+
 func (m *JITModule) finalize() {
 	C.Torch_DeleteJITModule(m.context)
 }
