@@ -1,4 +1,4 @@
-FROM debian:latest
+FROM debian:9.7
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV GO_VERSION 1.10
