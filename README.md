@@ -5,7 +5,7 @@ WORK IN PROGRESS... USE AT OWN RISK :-)
 
 # go-torch
 
-LibTorch (PyTorch) bindings for Golang. Library is first and foremost designed for running inference against serialized models exported from Python version of PyTorch. Library can also be used to compile TorchScript applications directly for Go.
+LibTorch (PyTorch) bindings for Golang. Library is first and foremost designed for running inference against serialized models exported from Python version of PyTorch. Library can also be used to compile TorchScript applications directly from Go.
 
 ## Installing
 ```sh
