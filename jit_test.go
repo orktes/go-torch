@@ -49,12 +49,12 @@ func Test_CompileTorchScript(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if res[0].Value().([]float32)[0] != 2 {
-		t.Error("1 + 1 should equal 2 but got", res[0].Value())
+	if res.(*Tensor).Value().([]float32)[0] != 2 {
+		t.Error("1 + 1 should equal 2 but got", res.(*Tensor).Value())
 	}
 
-	if res[0].Value().([]float32)[1] != 4 {
-		t.Error("2 + 2 should equal 4 but got", res[0].Value())
+	if res.(*Tensor).Value().([]float32)[1] != 4 {
+		t.Error("2 + 2 should equal 4 but got", res.(*Tensor).Value())
 	}
 
 }
@@ -90,11 +90,11 @@ func Test_SaveAndLoadJITModule(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if res[0].Value().([]float32)[0] != 2 {
-		t.Error("1 + 1 should equal 2 but got", res[0].Value())
+	if res.(*Tensor).Value().([]float32)[0] != 2 {
+		t.Error("1 + 1 should equal 2 but got", res.(*Tensor).Value())
 	}
 
-	if res[0].Value().([]float32)[1] != 4 {
-		t.Error("2 + 2 should equal 4 but got", res[0].Value())
+	if res.(*Tensor).Value().([]float32)[1] != 4 {
+		t.Error("2 + 2 should equal 4 but got", res.(*Tensor).Value())
 	}
 }

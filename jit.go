@@ -4,6 +4,7 @@ package torch
 // #include <stdlib.h>
 import "C"
 import (
+	"fmt"
 	"runtime"
 	"unsafe"
 )
@@ -61,8 +62,8 @@ func (m *JITModule) GetMethod(method string) (*JITModuleMethod, error) {
 	return met, nil
 }
 
-// RunMethod executes given method with tensors as input
-func (m *JITModule) RunMethod(method string, inputs ...*Tensor) ([]*Tensor, error) {
+// RunMethod executes given method with tensors or tuples as input
+func (m *JITModule) RunMethod(method string, inputs ...interface{}) (interface{}, error) {
 	met, err := m.GetMethod(method)
 	if err != nil {
 		return nil, err
@@ -72,7 +73,7 @@ func (m *JITModule) RunMethod(method string, inputs ...*Tensor) ([]*Tensor, erro
 }
 
 // Forward exectures forward method of the module (forward propagation)
-func (m *JITModule) Forward(inputs ...*Tensor) ([]*Tensor, error) {
+func (m *JITModule) Forward(inputs ...interface{}) (interface{}, error) {
 	return m.RunMethod("forward", inputs...)
 }
 
@@ -87,10 +88,16 @@ type JITModuleMethod struct {
 }
 
 // Run executes given method with tensors as input
-func (m *JITModuleMethod) Run(inputs ...*Tensor) ([]*Tensor, error) {
+func (m *JITModuleMethod) Run(inputs ...interface{}) (interface{}, error) {
 	contexts := make([]C.Torch_TensorContext, len(inputs))
 	for i, t := range inputs {
-		contexts[i] = t.context
+		switch v := t.(type) {
+		case *Tensor:
+			contexts[i] = v.context
+		default:
+			return nil, fmt.Errorf("invalid input type for run %T", t)
+		}
+
 	}
 
 	var resSize C.ulong
@@ -114,7 +121,7 @@ func (m *JITModuleMethod) Run(inputs ...*Tensor) ([]*Tensor, error) {
 
 	runtime.KeepAlive(inputs)
 
-	return outputs, nil
+	return outputs[0], nil
 }
 
 // Arguments returns method arguments for the method schema

@@ -39,6 +39,7 @@ inputTensor, _ := torch.NewTensor([][]float32{
 // Forward propagation
 res, _ := module.Forward(inputTensor)
 
+
 ```
 
 ### Using TorchScript
@@ -57,5 +58,7 @@ a, _ := torch.NewTensor([]float32{1})
 b, _ := torch.NewTensor([]float32{2})
 
 res, _ := module.RunMethod("sum", a, b)
+fmt.Printf("[1] + [2] = %+v\n", res.(*torch.Tensor).Value())
+// output: [1] + [2] = [3]
 
 ```
