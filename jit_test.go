@@ -125,7 +125,7 @@ func Test_TupleReturn(t *testing.T) {
 
 	// Check returns
 	method, _ := module.GetMethod("sum_sub")
-	if method.Returns()[0].Type != "Tensor" || method.Returns()[1].Type != "Tensor" {
+	if method.Returns()[0].Type != "(Tensor, Tensor)" {
 		t.Error("wrong return type for method", method.Returns())
 	}
 
