@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"strings"
 	"testing"
 )
 
@@ -76,6 +77,16 @@ func Test_CompileTorchScript(t *testing.T) {
 		t.Error("2 + 2 should equal 4 but got", res.(*Tensor).Value())
 	}
 
+}
+
+func Test_InvalidTorchScript(t *testing.T) {
+	_, err := CompileTorchScript("should_compile")
+	if err == nil {
+		t.Error("should have returned an error")
+	}
+	if !strings.HasPrefix(err.Error(), "expected def but found 'ident' here:") {
+		t.Error("wrong message returned", err)
+	}
 }
 
 func Test_TupleInput(t *testing.T) {

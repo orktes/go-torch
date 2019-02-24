@@ -5,6 +5,23 @@
 #include "torch.hpp"
 #include <iostream>
 #include <stdlib.h>
+#include <exception>
+#include <string>
+
+#define HANDLE_TH_ERRORS                                           \
+  try {
+#define END_HANDLE_TH_ERRORS(errVar, retVal)                       \
+  }                                                                \
+  catch (const std::exception& e) {                                \
+    auto msg = e.what();                                           \
+    auto err = Torch_Error{                                        \
+        .message = new char[strlen(msg)+1],                        \
+    };                                                             \
+    std::strcpy(err.message, msg);                                 \
+    *errVar = err;                                                 \
+    return retVal;                                                 \
+  }
+
 
 struct Torch_Tensor {
     torch::Tensor tensor;
@@ -183,29 +200,36 @@ void Torch_DeleteTensor(Torch_TensorContext ctx) {
 
 }
 
-Torch_JITModuleContext Torch_CompileTorchScript(char* cstring_script) {
+Torch_JITModuleContext Torch_CompileTorchScript(char* cstring_script, Torch_Error* error) {
+    HANDLE_TH_ERRORS
     std::string script(cstring_script);
     auto mod = new Torch_JITModule();
     mod->module = torch::jit::compile(script);
 
     return (void *)mod;
+    END_HANDLE_TH_ERRORS(error, NULL)
 }
 
-Torch_JITModuleContext Torch_LoadJITModule(char* cstring_path) {
+Torch_JITModuleContext Torch_LoadJITModule(char* cstring_path, Torch_Error* error) {
+    HANDLE_TH_ERRORS
     std::string module_path(cstring_path);
     auto mod = new Torch_JITModule();
     mod->module = torch::jit::load(module_path);
 
     return (void *)mod;
+    END_HANDLE_TH_ERRORS(error, NULL)
 }
 
-void Torch_ExportJITModule(Torch_JITModuleContext ctx, char* cstring_path) {
+void Torch_ExportJITModule(Torch_JITModuleContext ctx, char* cstring_path, Torch_Error* error) {
+    HANDLE_TH_ERRORS
     std::string module_path(cstring_path);
     auto mod = (Torch_JITModule*)ctx;
     mod->module->save(module_path);
+    END_HANDLE_TH_ERRORS(error,)
 }
 
-Torch_JITModuleMethodContext Torch_JITModuleGetMethod(Torch_JITModuleContext ctx, char* cstring_method) {
+Torch_JITModuleMethodContext Torch_JITModuleGetMethod(Torch_JITModuleContext ctx, char* cstring_method, Torch_Error* error) {
+    HANDLE_TH_ERRORS
     std::string method_name(cstring_method);
     auto mod = (Torch_JITModule*)ctx;
 
@@ -214,6 +238,7 @@ Torch_JITModuleMethodContext Torch_JITModuleGetMethod(Torch_JITModuleContext ctx
     };
 
     return (void *)met;
+    END_HANDLE_TH_ERRORS(error, NULL)
 }
 
 
@@ -237,7 +262,7 @@ char** Torch_JITModuleGetMethodNames(Torch_JITModuleContext ctx, size_t* len) {
     return result;
 }
 
-Torch_IValue Torch_JITModuleMethodRun(Torch_JITModuleMethodContext ctx, Torch_IValue* inputs, size_t input_size) {
+Torch_IValue Torch_JITModuleMethodRun(Torch_JITModuleMethodContext ctx, Torch_IValue* inputs, size_t input_size, Torch_Error* error) {
     auto met = (Torch_JITModule_Method*)ctx;
 
     std::vector<torch::IValue> inputs_vec;

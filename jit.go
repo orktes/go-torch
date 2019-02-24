@@ -23,7 +23,12 @@ func CompileTorchScript(torchScript string) (*JITModule, error) {
 	cstr := C.CString(torchScript)
 	defer C.free(unsafe.Pointer(cstr))
 
-	ctx := C.Torch_CompileTorchScript(cstr)
+	var cErr C.Torch_Error
+	ctx := C.Torch_CompileTorchScript(cstr, &cErr)
+	if err := checkError(cErr); err != nil {
+		return nil, err
+	}
+
 	mod := &JITModule{context: ctx}
 	runtime.SetFinalizer(mod, (*JITModule).finalize)
 
@@ -35,7 +40,12 @@ func LoadJITModule(path string) (*JITModule, error) {
 	cstr := C.CString(path)
 	defer C.free(unsafe.Pointer(cstr))
 
-	ctx := C.Torch_LoadJITModule(cstr)
+	var cErr C.Torch_Error
+	ctx := C.Torch_LoadJITModule(cstr, &cErr)
+	if err := checkError(cErr); err != nil {
+		return nil, err
+	}
+
 	mod := &JITModule{context: ctx}
 	runtime.SetFinalizer(mod, (*JITModule).finalize)
 	// TODO handle errors
@@ -47,7 +57,11 @@ func (m *JITModule) Save(path string) error {
 	cstr := C.CString(path)
 	defer C.free(unsafe.Pointer(cstr))
 
-	C.Torch_ExportJITModule(m.context, cstr)
+	var cErr C.Torch_Error
+	C.Torch_ExportJITModule(m.context, cstr, &cErr)
+	if err := checkError(cErr); err != nil {
+		return err
+	}
 
 	// TODO handle errors
 	return nil
@@ -58,7 +72,12 @@ func (m *JITModule) GetMethod(method string) (*JITModuleMethod, error) {
 	cstr := C.CString(method)
 	defer C.free(unsafe.Pointer(cstr))
 
-	context := C.Torch_JITModuleGetMethod(m.context, cstr)
+	var cErr C.Torch_Error
+	context := C.Torch_JITModuleGetMethod(m.context, cstr, &cErr)
+	if err := checkError(cErr); err != nil {
+		return nil, err
+	}
+
 	met := &JITModuleMethod{context: context, module: m}
 
 	runtime.SetFinalizer(met, (*JITModuleMethod).finalize)
@@ -121,11 +140,16 @@ func (m *JITModuleMethod) Run(inputs ...interface{}) (interface{}, error) {
 
 	defer freeIValues(ivalues)
 
+	var cErr C.Torch_Error
 	ival := C.Torch_JITModuleMethodRun(
 		m.context,
 		(*C.Torch_IValue)(&ivalues[0]),
 		C.ulong(len(ivalues)),
+		&cErr,
 	)
+	if err := checkError(cErr); err != nil {
+		return nil, err
+	}
 
 	defer freeIValues([]C.Torch_IValue{ival})
 
