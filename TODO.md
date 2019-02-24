@@ -1,6 +1,5 @@
 # TODO
 
-- Finalizers for JITModule and JITModuleMethod
 - Expose Schema from JITModuleMethod
 - Implement loading of saved models
 - Implement saving of JIT modules

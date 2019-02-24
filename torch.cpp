@@ -177,3 +177,13 @@ Torch_TensorContext* Torch_JITModuleMethodRun(Torch_JITModuleMethodContext ctx, 
     
     return NULL;
 }
+
+void Torch_DeleteJITModuleMethod(Torch_JITModuleMethodContext ctx) {
+    auto med = (Torch_JITModule_Method*)ctx;
+    delete med;
+}
+
+void Torch_DeleteJITModule(Torch_JITModuleContext ctx) {
+    auto mod = (Torch_JITModule*)ctx;
+    delete mod;
+}

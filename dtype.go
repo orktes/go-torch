@@ -4,17 +4,21 @@ package torch
 import "C"
 import "reflect"
 
-// DType tensor data type
+// DType tensor scalar data type
 type DType C.Torch_DataType
 
 const (
+	// Byte byte tensors (go type uint8)
 	Byte DType = C.Torch_Byte
+	// Char char tensor (go type int8)
 	Char DType = C.Torch_Char
-	// Short DType = C.Torch_Short
-	Int  DType = C.Torch_Int
+	// Int int tensor (go type int32)
+	Int DType = C.Torch_Int
+	// Long long tensor (go type int64)
 	Long DType = C.Torch_Long
-	// Half   DType = C.Torch_Half
-	Float  DType = C.Torch_Float
+	// Float tensor (go type float32)
+	Float DType = C.Torch_Float
+	// Double tensor  (go type float64)
 	Double DType = C.Torch_Double
 )
 

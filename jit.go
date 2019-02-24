@@ -19,7 +19,10 @@ func CompileTorchScript(torchScript string) (*JITModule, error) {
 	defer C.free(unsafe.Pointer(cstr))
 
 	ctx := C.Torch_CompileTorchScript(cstr)
-	return &JITModule{context: ctx}, nil
+	mod := &JITModule{context: ctx}
+	runtime.SetFinalizer(mod, (*JITModule).finalize)
+
+	return mod, nil
 }
 
 // GetMethod returns a method from a JITModule
@@ -28,12 +31,21 @@ func (m *JITModule) GetMethod(method string) (*JITModuleMethod, error) {
 	defer C.free(unsafe.Pointer(cstr))
 
 	context := C.Torch_JITModuleGetMethod(m.context, cstr)
-	return &JITModuleMethod{context: context}, nil
+	met := &JITModuleMethod{context: context, module: m}
+
+	runtime.SetFinalizer(met, (*JITModuleMethod).finalize)
+
+	return met, nil
+}
+
+func (m *JITModule) finalize() {
+	C.Torch_DeleteJITModule(m.context)
 }
 
 // JITModuleMethod is single method from a JITModule
 type JITModuleMethod struct {
 	context C.Torch_JITModuleMethodContext
+	module  *JITModule
 }
 
 // Run executes given method given tensors as input
@@ -63,4 +75,8 @@ func (m *JITModuleMethod) Run(inputs ...*Tensor) ([]*Tensor, error) {
 	runtime.KeepAlive(inputs)
 
 	return outputs, nil
+}
+
+func (m *JITModuleMethod) finalize() {
+	C.Torch_DeleteJITModuleMethod(m.context)
 }

@@ -35,6 +35,9 @@ extern "C" {
     Torch_JITModuleContext Torch_CompileTorchScript(char* script);
     Torch_JITModuleMethodContext Torch_JITModuleGetMethod(Torch_JITModuleContext ctx, char* method);
     Torch_TensorContext* Torch_JITModuleMethodRun(Torch_JITModuleMethodContext ctx, Torch_TensorContext* tensors, size_t input_size, size_t* res_size);
+    void Torch_DeleteJITModuleMethod(Torch_JITModuleMethodContext ctx);
+    void Torch_DeleteJITModule(Torch_JITModuleContext ctx);
+
 
 #ifdef __cplusplus
 }
