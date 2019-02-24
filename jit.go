@@ -2,6 +2,10 @@ package torch
 
 // #include "torch.hpp"
 // #include <stdlib.h>
+//
+// size_t size_of_ivalue_tuple = sizeof(Torch_IValueTuple);
+// size_t size_of_ivalue = sizeof(Torch_IValue);
+//
 import "C"
 import (
 	"fmt"
@@ -91,16 +95,11 @@ type JITModuleMethod struct {
 func (m *JITModuleMethod) Run(inputs ...interface{}) (interface{}, error) {
 	ivalues := make([]C.Torch_IValue, len(inputs))
 	for i, t := range inputs {
-		switch v := t.(type) {
-		case *Tensor:
-			ivalues[i] = C.Torch_IValue{
-				itype:    C.Torch_IValueTypeTensor,
-				data_ptr: unsafe.Pointer(v.context),
-			}
-		default:
-			return nil, fmt.Errorf("invalid input type for run %T", t)
+		var err error
+		ivalues[i], err = convertGoValueToIValue(t)
+		if err != nil {
+			return nil, err
 		}
-
 	}
 
 	defer freeIValues(ivalues)
@@ -130,7 +129,9 @@ func (m *JITModuleMethod) Arguments() []JITModuleMethodArgument {
 	for i, arg := range resSlice {
 		args[i] = JITModuleMethodArgument{
 			Name: C.GoString(arg.name),
+			Type: C.GoString(arg.typ),
 		}
+		C.free(unsafe.Pointer(arg.typ))
 		C.free(unsafe.Pointer(arg.name))
 	}
 
@@ -149,7 +150,9 @@ func (m *JITModuleMethod) Returns() []JITModuleMethodArgument {
 	for i, arg := range resSlice {
 		args[i] = JITModuleMethodArgument{
 			Name: C.GoString(arg.name),
+			Type: C.GoString(arg.typ),
 		}
+		C.free(unsafe.Pointer(arg.typ))
 		C.free(unsafe.Pointer(arg.name))
 	}
 
@@ -163,6 +166,7 @@ func (m *JITModuleMethod) finalize() {
 // JITModuleMethodArgument contains information of a single method argument
 type JITModuleMethodArgument struct {
 	Name string
+	Type string
 }
 
 func freeTuple(tuple *C.Torch_IValueTuple) {
@@ -207,4 +211,35 @@ func convertIValueTupleToTuple(tuple *C.Torch_IValueTuple) (Tuple, error) {
 	}
 
 	return goTuple, nil
+}
+
+func convertGoValueToIValue(val interface{}) (C.Torch_IValue, error) {
+	switch v := val.(type) {
+	case *Tensor:
+		return C.Torch_IValue{
+			itype:    C.Torch_IValueTypeTensor,
+			data_ptr: unsafe.Pointer(v.context),
+		}, nil
+	case Tuple:
+		tuple := (*C.Torch_IValueTuple)(C.malloc(C.size_of_ivalue_tuple))
+		tuple.values = (*C.Torch_IValue)(C.malloc(C.size_of_ivalue * C.ulong(len(v))))
+		tuple.length = C.ulong(len(v))
+
+		valuesSlice := (*[1 << 30]C.Torch_IValue)(unsafe.Pointer(tuple.values))[:tuple.length:tuple.length]
+
+		for i, val := range v {
+			var err error
+			valuesSlice[i], err = convertGoValueToIValue(val)
+			if err != nil {
+				return C.Torch_IValue{}, err
+			}
+		}
+
+		return C.Torch_IValue{
+			itype:    C.Torch_IValueTypeTuple,
+			data_ptr: unsafe.Pointer(tuple),
+		}, nil
+	default:
+		return C.Torch_IValue{}, fmt.Errorf("invalid input type for run %T", val)
+	}
 }

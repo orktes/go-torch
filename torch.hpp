@@ -39,6 +39,7 @@ extern "C" {
 
     typedef struct Torch_ModuleMethodArgument {
         char* name;
+        char* typ;
         //Torch_TensorContext default_value;
         //Torch_DataType type;
     } Torch_ModuleMethodArgument;

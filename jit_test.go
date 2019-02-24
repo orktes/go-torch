@@ -12,6 +12,12 @@ def sum(a, b):
     return a + b
 `
 
+const tupleInput = `
+def sum(tup : Tuple[Tensor, Tensor]):
+	t0, t1 = tup
+	return t0 + t1
+`
+
 const sumAndSubs = `
 def sum_sub(a, b):
 	return (a + b, a - b)
@@ -40,6 +46,10 @@ func Test_CompileTorchScript(t *testing.T) {
 		t.Error("wrong arg name returned", args[1].Name)
 	}
 
+	if args[0].Type != "Tensor" {
+		t.Error("wrong input type returned")
+	}
+
 	returns := method.Returns()
 
 	if len(returns) != 1 {
@@ -64,6 +74,31 @@ func Test_CompileTorchScript(t *testing.T) {
 
 }
 
+func Test_TupleInput(t *testing.T) {
+	module, err := CompileTorchScript(tupleInput)
+	if err != nil {
+		t.Error(err)
+	}
+
+	a, _ := NewTensor([]float32{1})
+	b, _ := NewTensor([]float32{1})
+
+	res, err := module.RunMethod("sum", Tuple{a, b})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	sum := res.(*Tensor)
+	if sum.Value().([]float32)[0] != 2 {
+		t.Error("1 + 1 should equal 2 but got", res.(*Tensor).Value())
+	}
+
+	method, _ := module.GetMethod("sum")
+	if method.Arguments()[0].Type != "(Tensor, Tensor)" {
+		t.Error("wrong return type for method", method.Arguments())
+	}
+}
+
 func Test_TupleReturn(t *testing.T) {
 	module, err := CompileTorchScript(sumAndSubs)
 	if err != nil {
@@ -86,6 +121,12 @@ func Test_TupleReturn(t *testing.T) {
 	sub := res.(Tuple).Get(1).(*Tensor)
 	if sub.Value().([]float32)[0] != 0 {
 		t.Error("1 - 1 should equal 0 but got", res.(*Tensor).Value())
+	}
+
+	// Check returns
+	method, _ := module.GetMethod("sum_sub")
+	if method.Returns()[0].Type != "Tensor" || method.Returns()[1].Type != "Tensor" {
+		t.Error("wrong return type for method", method.Returns())
 	}
 
 }

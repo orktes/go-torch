@@ -121,6 +121,17 @@ torch::IValue Torch_ConvertTorchIValueToIValue(Torch_IValue value) {
     if (value.itype == Torch_IValueTypeTensor) {
         auto tensor = (Torch_Tensor*)value.data_ptr;
         return tensor->tensor;
+    } else if (value.itype == Torch_IValueTypeTuple) {
+        auto tuple = (Torch_IValueTuple*)value.data_ptr;
+        std::vector<torch::IValue> values;
+        values.reserve(tuple->length);
+
+        for (int i = 0; i < tuple->length; i++) {
+            auto ival = *(tuple->values+i);
+            values.push_back(Torch_ConvertTorchIValueToIValue(ival));
+        }
+
+        return torch::jit::Tuple::create(std::move(values));
     }
 
     // TODO handle this case
@@ -230,14 +241,17 @@ Torch_ModuleMethodArgument* Torch_JITModuleMethodArguments(Torch_JITModuleMethod
 
     for(std::vector<torch::Argument>::size_type i = 0; i != arguments.size(); i++) {
         auto name = arguments[i].name();
-        char *cstr = new char[name.length() + 1];
-        strcpy(cstr, name.c_str());
-       
-        Torch_ModuleMethodArgument arg = {
-            .name = cstr,
-        };
+        char *cstr_name = new char[name.length() + 1];
+        strcpy(cstr_name, name.c_str());
 
-        *(result + i) = arg;
+        auto type = arguments[i].type()->str();
+        char *cstr_type = new char[type.length() + 1];
+        strcpy(cstr_type, type.c_str());
+
+        *(result + i) = Torch_ModuleMethodArgument{
+            .name = cstr_name,
+            .typ = cstr_type,
+        };
     }
 
     return result;
@@ -254,14 +268,18 @@ Torch_ModuleMethodArgument* Torch_JITModuleMethodReturns(Torch_JITModuleMethodCo
 
     for(std::vector<torch::Argument>::size_type i = 0; i != arguments.size(); i++) {
         auto name = arguments[i].name();
-        char *cstr = new char[name.length() + 1];
-        strcpy(cstr, name.c_str());
-       
-        Torch_ModuleMethodArgument arg = {
-            .name = cstr,
-        };
+        char *cstr_name = new char[name.length() + 1];
+        strcpy(cstr_name, name.c_str());
 
-        *(result + i) = arg;
+        auto type = arguments[i].type()->str();
+        char *cstr_type = new char[type.length() + 1];
+        strcpy(cstr_type, type.c_str());
+
+       
+        *(result + i) = Torch_ModuleMethodArgument{
+            .name = cstr_name,
+            .typ = cstr_type,
+        };
     }
 
     return result;
