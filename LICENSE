@@ -1,6 +1,6 @@
 Apache License, Version 2.0
 
-Go type -> Tensor
+Go type -> Tensor (from Tensorflow Go bindings)
 Copyright (c) 2016 The TensorFlow Authors. All Rights Reserved.
 
 Rest:
