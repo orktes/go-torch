@@ -1,6 +1,7 @@
 #define _GLIBCXX_USE_CXX11_ABI 0
 
 #include <torch/torch.h>
+#include <torch/script.h>
 #include "torch.hpp"
 #include <iostream>
 #include <stdlib.h>
@@ -118,6 +119,14 @@ int64_t* Torch_TensorShape(Torch_TensorContext ctx, size_t* dims){
     return (int64_t*)sizes.data();
 }
 
+void Torch_PrintTensors(Torch_TensorContext* tensors, size_t input_size) {
+     for (int i = 0; i < input_size; i++) {
+        auto ctx = tensors+i;
+        auto tensor = (Torch_Tensor*)*ctx;
+        std::cout << tensor->tensor << "\n";
+    }
+}
+
 void Torch_DeleteTensor(Torch_TensorContext ctx) {
     auto tensor = (Torch_Tensor*)ctx;
     delete tensor;
@@ -132,6 +141,20 @@ Torch_JITModuleContext Torch_CompileTorchScript(char* cstring_script) {
     return (void *)mod;
 }
 
+Torch_JITModuleContext Torch_LoadJITModule(char* cstring_path) {
+    std::string module_path(cstring_path);
+    auto mod = new Torch_JITModule();
+    mod->module = torch::jit::load(module_path);
+
+    return (void *)mod;
+}
+
+void Torch_ExportJITModule(Torch_JITModuleContext ctx, char* cstring_path) {
+    std::string module_path(cstring_path);
+    auto mod = (Torch_JITModule*)ctx;
+    mod->module->save(module_path);
+}
+
 Torch_JITModuleMethodContext Torch_JITModuleGetMethod(Torch_JITModuleContext ctx, char* cstring_method) {
     std::string method_name(cstring_method);
     auto mod = (Torch_JITModule*)ctx;
@@ -142,14 +165,6 @@ Torch_JITModuleMethodContext Torch_JITModuleGetMethod(Torch_JITModuleContext ctx
 
 
     return (void *)met;
-}
-
-void Torch_PrintTensors(Torch_TensorContext* tensors, size_t input_size) {
-     for (int i = 0; i < input_size; i++) {
-        auto ctx = tensors+i;
-        auto tensor = (Torch_Tensor*)*ctx;
-        std::cout << tensor->tensor << "\n";
-    }
 }
 
 Torch_TensorContext* Torch_JITModuleMethodRun(Torch_JITModuleMethodContext ctx, Torch_TensorContext* tensors, size_t input_size, size_t* res_size) {
@@ -177,6 +192,55 @@ Torch_TensorContext* Torch_JITModuleMethodRun(Torch_JITModuleMethodContext ctx, 
     
     return NULL;
 }
+
+
+Torch_ModuleMethodArgument* Torch_JITModuleMethodArguments(Torch_JITModuleMethodContext ctx, size_t* res_size) {
+    auto met = (Torch_JITModule_Method*)ctx;
+    auto schema = met->run.getSchema();
+    auto arguments = schema.arguments();
+
+    auto result = (Torch_ModuleMethodArgument*)malloc(sizeof(Torch_ModuleMethodArgument)*arguments.size());
+    *res_size = arguments.size();
+
+    for(std::vector<torch::Argument>::size_type i = 0; i != arguments.size(); i++) {
+        auto name = arguments[i].name();
+        char *cstr = new char[name.length() + 1];
+        strcpy(cstr, name.c_str());
+       
+        Torch_ModuleMethodArgument arg = {
+            .name = cstr,
+        };
+
+        *(result + i) = arg;
+    }
+
+    return result;
+}
+
+
+Torch_ModuleMethodArgument* Torch_JITModuleMethodReturns(Torch_JITModuleMethodContext ctx, size_t* res_size) {
+    auto met = (Torch_JITModule_Method*)ctx;
+    auto schema = met->run.getSchema();
+    auto arguments = schema.returns();
+
+    auto result = (Torch_ModuleMethodArgument*)malloc(sizeof(Torch_ModuleMethodArgument)*arguments.size());
+    *res_size = arguments.size();
+
+    for(std::vector<torch::Argument>::size_type i = 0; i != arguments.size(); i++) {
+        auto name = arguments[i].name();
+        char *cstr = new char[name.length() + 1];
+        strcpy(cstr, name.c_str());
+       
+        Torch_ModuleMethodArgument arg = {
+            .name = cstr,
+        };
+
+        *(result + i) = arg;
+    }
+
+    return result;
+}
+
 
 void Torch_DeleteJITModuleMethod(Torch_JITModuleMethodContext ctx) {
     auto med = (Torch_JITModule_Method*)ctx;

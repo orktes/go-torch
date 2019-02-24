@@ -5,6 +5,10 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+    typedef void* Torch_TensorContext;
+    typedef void* Torch_JITModuleContext;
+    typedef void* Torch_JITModuleMethodContext;
+
     typedef enum Torch_DataType {
         Torch_Unknown = 0,
         Torch_Byte = 1,
@@ -18,9 +22,11 @@ extern "C" {
 
     } Torch_DataType;
 
-    typedef void* Torch_TensorContext;
-    typedef void* Torch_JITModuleContext;
-    typedef void* Torch_JITModuleMethodContext;
+    typedef struct Torch_ModuleMethodArgument {
+        char* name;
+        //Torch_TensorContext default_value;
+        //Torch_DataType type;
+    } Torch_ModuleMethodArgument;
 
     void Torch_PrintTensors(Torch_TensorContext* tensors, size_t input_size);
 
@@ -33,8 +39,12 @@ extern "C" {
 
     // JIT
     Torch_JITModuleContext Torch_CompileTorchScript(char* script);
+    Torch_JITModuleContext Torch_LoadJITModule(char* path);
+    void Torch_ExportJITModule(Torch_JITModuleContext ctx, char* path);
     Torch_JITModuleMethodContext Torch_JITModuleGetMethod(Torch_JITModuleContext ctx, char* method);
     Torch_TensorContext* Torch_JITModuleMethodRun(Torch_JITModuleMethodContext ctx, Torch_TensorContext* tensors, size_t input_size, size_t* res_size);
+    Torch_ModuleMethodArgument* Torch_JITModuleMethodArguments(Torch_JITModuleMethodContext ctx, size_t* res_size);
+    Torch_ModuleMethodArgument* Torch_JITModuleMethodReturns(Torch_JITModuleMethodContext ctx, size_t* res_size);
     void Torch_DeleteJITModuleMethod(Torch_JITModuleMethodContext ctx);
     void Torch_DeleteJITModule(Torch_JITModuleContext ctx);
 
