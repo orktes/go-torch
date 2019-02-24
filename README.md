@@ -22,6 +22,27 @@ import (
 )
 ```
 
+### Creating Tensors
+
+Supported scalar types:
+- torch.Byte `uint8`
+- torch.Char `int8`
+- torch.Int `int32`
+- torch.Long `int64`
+- torch.Float `float32`
+- torch.Double `float64`
+
+```go
+
+matrix := []float32{
+    []float32{1,2,3},
+    []float32{4,5,6}
+}
+tensor, _ := torch.NewTensor(matrix)
+tensor.Shape() // [2, 3]
+tensor.DType() // torch.Float
+```
+
 ### Using serialized PyTorch models
 
 For instructions on how to export models for PyTorch refer to the [PyTorch documentation](https://pytorch.org/tutorials/advanced/cpp_export.html)
