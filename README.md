@@ -43,6 +43,13 @@ res, _ := module.Forward(inputTensor)
 
 ### Using TorchScript
 
+[TorchScript documentation](https://pytorch.org/docs/stable/jit.html)
+
+Currently supported input and output types
+- Tensor
+- Tuple (of Tensor and/or nested Tuples)
+
+
 ```go
 sumScript = `
 def sum(a, b):
