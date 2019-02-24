@@ -81,6 +81,23 @@ func (m *JITModule) Forward(inputs ...interface{}) (interface{}, error) {
 	return m.RunMethod("forward", inputs...)
 }
 
+// GetMethodNames returns all method names from the module
+func (m *JITModule) GetMethodNames() []string {
+	var resLen C.ulong
+	cnamesPtr := C.Torch_JITModuleGetMethodNames(m.context, &resLen)
+	resSlice := (*[1 << 30]*C.char)(unsafe.Pointer(cnamesPtr))[:resLen:resLen]
+	defer C.free(unsafe.Pointer(cnamesPtr))
+
+	names := make([]string, len(resSlice))
+
+	for i, name := range resSlice {
+		names[i] = C.GoString(name)
+		C.free(unsafe.Pointer(name))
+	}
+
+	return names
+}
+
 func (m *JITModule) finalize() {
 	C.Torch_DeleteJITModule(m.context)
 }

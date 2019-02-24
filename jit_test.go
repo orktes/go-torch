@@ -29,6 +29,10 @@ func Test_CompileTorchScript(t *testing.T) {
 		t.Error(err)
 	}
 
+	if len(module.GetMethodNames()) != 1 || module.GetMethodNames()[0] != "sum" {
+		t.Error("invalid methods in module", module.GetMethodNames())
+	}
+
 	method, err := module.GetMethod("sum")
 	if err != nil {
 		t.Error(err)

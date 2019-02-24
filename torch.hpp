@@ -58,6 +58,7 @@ extern "C" {
     Torch_JITModuleContext Torch_LoadJITModule(char* path);
     void Torch_ExportJITModule(Torch_JITModuleContext ctx, char* path);
     Torch_JITModuleMethodContext Torch_JITModuleGetMethod(Torch_JITModuleContext ctx, char* method);
+    char** Torch_JITModuleGetMethodNames(Torch_JITModuleContext ctx, size_t* len);
     Torch_IValue Torch_JITModuleMethodRun(Torch_JITModuleMethodContext ctx, Torch_IValue* inputs, size_t input_size);
     Torch_ModuleMethodArgument* Torch_JITModuleMethodArguments(Torch_JITModuleMethodContext ctx, size_t* res_size);
     Torch_ModuleMethodArgument* Torch_JITModuleMethodReturns(Torch_JITModuleMethodContext ctx, size_t* res_size);

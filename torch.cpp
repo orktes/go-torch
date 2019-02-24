@@ -216,6 +216,27 @@ Torch_JITModuleMethodContext Torch_JITModuleGetMethod(Torch_JITModuleContext ctx
     return (void *)met;
 }
 
+
+char** Torch_JITModuleGetMethodNames(Torch_JITModuleContext ctx, size_t* len) {
+    auto mod = (Torch_JITModule*)ctx;
+    auto size = mod->module->get_methods().size();
+    *len = size;
+    auto result = (char**)malloc(sizeof(char*) * size);
+
+    int i = 0;
+    for (auto& method : mod->module->get_methods()) {
+        auto key = method.value()->name();
+        auto ckey = new char[key.length() + 1];
+        strcpy(ckey, key.c_str());
+
+        *(result + i) = ckey;
+
+        i++;
+    }
+
+    return result;
+}
+
 Torch_IValue Torch_JITModuleMethodRun(Torch_JITModuleMethodContext ctx, Torch_IValue* inputs, size_t input_size) {
     auto met = (Torch_JITModule_Method*)ctx;
 
