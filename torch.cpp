@@ -88,6 +88,45 @@ Torch_DataType Torch_ConvertScalarTypeToDataType(torch::ScalarType type) {
     return dtype;
 }
 
+Torch_IValue Torch_ConvertIValueToTorchIValue(torch::IValue value) {
+    if (value.isTensor()) {
+        auto tensor = new Torch_Tensor();
+        tensor->tensor = value.toTensor();
+        return Torch_IValue{
+            .itype = Torch_IValueTypeTensor,
+            .data_ptr = tensor,
+        };
+    } else if (value.isTuple()) {
+        auto elements = value.toTuple()->elements();
+        auto tuple = (Torch_IValueTuple*)malloc(sizeof(Torch_IValueTuple));
+        auto values = (Torch_IValue*)malloc(sizeof(Torch_IValue) * elements.size());
+
+        for(std::vector<torch::IValue>::size_type i = 0; i != elements.size(); i++) {
+            *(values + i) = Torch_ConvertIValueToTorchIValue(elements[i]);
+        }
+
+        tuple->values = values;
+        tuple->length = elements.size();
+
+        return Torch_IValue{
+            .itype = Torch_IValueTypeTuple,
+            .data_ptr = tuple,
+        };
+    }
+
+    return Torch_IValue{};
+}
+
+torch::IValue Torch_ConvertTorchIValueToIValue(Torch_IValue value) {
+    if (value.itype == Torch_IValueTypeTensor) {
+        auto tensor = (Torch_Tensor*)value.data_ptr;
+        return tensor->tensor;
+    }
+
+    // TODO handle this case
+    return 0;
+}
+
 Torch_TensorContext Torch_NewTensor(void* input_data, int64_t* dimensions, int n_dim, Torch_DataType dtype) {
     torch::TensorOptions options = Torch_ConvertDataTypeToOptions(dtype);
     std::vector<int64_t> sizes;
@@ -163,34 +202,21 @@ Torch_JITModuleMethodContext Torch_JITModuleGetMethod(Torch_JITModuleContext ctx
         mod->module->get_method(method_name)
     };
 
-
     return (void *)met;
 }
 
-Torch_TensorContext* Torch_JITModuleMethodRun(Torch_JITModuleMethodContext ctx, Torch_TensorContext* tensors, size_t input_size, size_t* res_size) {
+Torch_IValue Torch_JITModuleMethodRun(Torch_JITModuleMethodContext ctx, Torch_IValue* inputs, size_t input_size) {
     auto met = (Torch_JITModule_Method*)ctx;
 
-    std::vector<torch::IValue> inputs;
+    std::vector<torch::IValue> inputs_vec;
 
     for (int i = 0; i < input_size; i++) {
-        auto ctx = tensors+i;
-        auto tensor = (Torch_Tensor*)*ctx;
-        inputs.push_back(tensor->tensor);
+        auto ival = *(inputs+i);
+        inputs_vec.push_back(Torch_ConvertTorchIValueToIValue(ival));
     }
 
-    auto res = met->run(inputs);
-
-    if (res.isTensor()) {
-        *res_size = 1;
-        auto res_ptr = (Torch_TensorContext*)malloc(sizeof(Torch_TensorContext));
-        auto tensor = new Torch_Tensor();
-        tensor->tensor = res.toTensor();
-        *res_ptr = tensor;
-        
-        return res_ptr;
-    }
-    
-    return NULL;
+    auto res = met->run(inputs_vec);
+    return Torch_ConvertIValueToTorchIValue(res);
 }
 
 

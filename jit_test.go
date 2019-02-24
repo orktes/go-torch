@@ -12,6 +12,11 @@ def sum(a, b):
     return a + b
 `
 
+const sumAndSubs = `
+def sum_sub(a, b):
+	return (a + b, a - b)
+`
+
 func Test_CompileTorchScript(t *testing.T) {
 	module, err := CompileTorchScript(sumScript)
 	if err != nil {
@@ -59,6 +64,31 @@ func Test_CompileTorchScript(t *testing.T) {
 
 }
 
+func Test_TupleReturn(t *testing.T) {
+	module, err := CompileTorchScript(sumAndSubs)
+	if err != nil {
+		t.Error(err)
+	}
+
+	a, _ := NewTensor([]float32{1})
+	b, _ := NewTensor([]float32{1})
+
+	res, err := module.RunMethod("sum_sub", a, b)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	sum := res.(Tuple).Get(0).(*Tensor)
+	if sum.Value().([]float32)[0] != 2 {
+		t.Error("1 + 1 should equal 2 but got", res.(*Tensor).Value())
+	}
+
+	sub := res.(Tuple).Get(1).(*Tensor)
+	if sub.Value().([]float32)[0] != 0 {
+		t.Error("1 - 1 should equal 0 but got", res.(*Tensor).Value())
+	}
+
+}
 func Test_SaveAndLoadJITModule(t *testing.T) {
 	dir, err := ioutil.TempDir("", "modules")
 	if err != nil {

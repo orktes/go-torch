@@ -89,39 +89,33 @@ type JITModuleMethod struct {
 
 // Run executes given method with tensors as input
 func (m *JITModuleMethod) Run(inputs ...interface{}) (interface{}, error) {
-	contexts := make([]C.Torch_TensorContext, len(inputs))
+	ivalues := make([]C.Torch_IValue, len(inputs))
 	for i, t := range inputs {
 		switch v := t.(type) {
 		case *Tensor:
-			contexts[i] = v.context
+			ivalues[i] = C.Torch_IValue{
+				itype:    C.Torch_IValueTypeTensor,
+				data_ptr: unsafe.Pointer(v.context),
+			}
 		default:
 			return nil, fmt.Errorf("invalid input type for run %T", t)
 		}
 
 	}
 
-	var resSize C.ulong
-	resPtr := C.Torch_JITModuleMethodRun(
+	defer freeIValues(ivalues)
+
+	ival := C.Torch_JITModuleMethodRun(
 		m.context,
-		(*C.Torch_TensorContext)(&contexts[0]),
-		C.ulong(len(contexts)),
-		&resSize)
+		(*C.Torch_IValue)(&ivalues[0]),
+		C.ulong(len(ivalues)),
+	)
 
-	if resSize == 0 || resPtr == nil {
-		return nil, nil
-	}
-
-	defer C.free(unsafe.Pointer(resPtr))
-
-	ctxSlice := (*[1 << 30]C.Torch_TensorContext)(unsafe.Pointer(resPtr))[:resSize:resSize]
-	outputs := make([]*Tensor, len(ctxSlice))
-	for i, ctx := range ctxSlice {
-		outputs[i] = tensorWithContext(ctx)
-	}
+	defer freeIValues([]C.Torch_IValue{ival})
 
 	runtime.KeepAlive(inputs)
 
-	return outputs[0], nil
+	return convertIValueToGoType(ival)
 }
 
 // Arguments returns method arguments for the method schema
@@ -169,4 +163,48 @@ func (m *JITModuleMethod) finalize() {
 // JITModuleMethodArgument contains information of a single method argument
 type JITModuleMethodArgument struct {
 	Name string
+}
+
+func freeTuple(tuple *C.Torch_IValueTuple) {
+	valuesSlice := (*[1 << 30]C.Torch_IValue)(unsafe.Pointer(tuple.values))[:tuple.length:tuple.length]
+	freeIValues(valuesSlice)
+	C.free(unsafe.Pointer(tuple.values))
+	C.free(unsafe.Pointer(tuple))
+}
+
+func freeIValues(values []C.Torch_IValue) {
+	for _, val := range values {
+		if val.itype == C.Torch_IValueTypeTuple {
+			freeTuple((*C.Torch_IValueTuple)(val.data_ptr))
+		}
+	}
+}
+
+func convertIValueToGoType(ival C.Torch_IValue) (interface{}, error) {
+	if ival.itype == C.Torch_IValueTypeTensor {
+		tensorContext := (C.Torch_TensorContext)(ival.data_ptr)
+		return tensorWithContext(tensorContext), nil
+	} else if ival.itype == C.Torch_IValueTypeTuple {
+		tuple := (*C.Torch_IValueTuple)(ival.data_ptr)
+		return convertIValueTupleToTuple(tuple)
+	}
+
+	// TODO handle errors
+	return nil, nil
+}
+
+func convertIValueTupleToTuple(tuple *C.Torch_IValueTuple) (Tuple, error) {
+	valuesSlice := (*[1 << 30]C.Torch_IValue)(unsafe.Pointer(tuple.values))[:tuple.length:tuple.length]
+
+	goTuple := make(Tuple, len(valuesSlice))
+
+	for i, ival := range valuesSlice {
+		var err error
+		goTuple[i], err = convertIValueToGoType(ival)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return goTuple, nil
 }

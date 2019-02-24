@@ -22,6 +22,21 @@ extern "C" {
 
     } Torch_DataType;
 
+    typedef enum Torch_IValueType {
+        Torch_IValueTypeTensor = 1,
+        Torch_IValueTypeTuple = 2,
+    } Torch_IValueType;
+
+    typedef struct Torch_IValue {
+        Torch_IValueType itype;
+        void* data_ptr;
+    } Torch_IValue;
+
+    typedef struct Torch_IValueTuple {
+        Torch_IValue* values;
+        size_t length;
+    } Torch_IValueTuple;
+
     typedef struct Torch_ModuleMethodArgument {
         char* name;
         //Torch_TensorContext default_value;
@@ -42,7 +57,7 @@ extern "C" {
     Torch_JITModuleContext Torch_LoadJITModule(char* path);
     void Torch_ExportJITModule(Torch_JITModuleContext ctx, char* path);
     Torch_JITModuleMethodContext Torch_JITModuleGetMethod(Torch_JITModuleContext ctx, char* method);
-    Torch_TensorContext* Torch_JITModuleMethodRun(Torch_JITModuleMethodContext ctx, Torch_TensorContext* tensors, size_t input_size, size_t* res_size);
+    Torch_IValue Torch_JITModuleMethodRun(Torch_JITModuleMethodContext ctx, Torch_IValue* inputs, size_t input_size);
     Torch_ModuleMethodArgument* Torch_JITModuleMethodArguments(Torch_JITModuleMethodContext ctx, size_t* res_size);
     Torch_ModuleMethodArgument* Torch_JITModuleMethodReturns(Torch_JITModuleMethodContext ctx, size_t* res_size);
     void Torch_DeleteJITModuleMethod(Torch_JITModuleMethodContext ctx);
