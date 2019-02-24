@@ -92,7 +92,7 @@ fmt.Printf("[1] + [2] = %+v\n", res.(*torch.Tensor).Value())
 
 ## Acknowledgements
 
-Lots of the functionality related to converting Golang types on PyTorch Tensors are a shameless copy on what Google is doing with their Go Tensorflow bindings so part of the credit definetely goes to The TensorFlow Authors.
+Lots of the functionality related to converting Golang types to PyTorch Tensors are a shameless copy on what Google is doing with their Go Tensorflow bindings. Therefore big part of the credit definetely goes to The TensorFlow Authors.
 
 ## LICENSE
 
