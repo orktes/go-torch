@@ -39,7 +39,6 @@ inputTensor, _ := torch.NewTensor([][]float32{
 // Forward propagation
 res, _ := module.Forward(inputTensor)
 
-
 ```
 
 ### Using TorchScript
