@@ -78,7 +78,7 @@ func (m *JITModule) GetMethod(method string) (*JITModuleMethod, error) {
 		return nil, err
 	}
 
-	met := &JITModuleMethod{context: context, module: m}
+	met := &JITModuleMethod{context: context, Module: m, Name: method}
 
 	runtime.SetFinalizer(met, (*JITModuleMethod).finalize)
 
@@ -124,7 +124,8 @@ func (m *JITModule) finalize() {
 // JITModuleMethod is single method from a JITModule
 type JITModuleMethod struct {
 	context C.Torch_JITModuleMethodContext
-	module  *JITModule
+	Module  *JITModule
+	Name    string
 }
 
 // Run executes given method with tensors as input
