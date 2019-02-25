@@ -12,6 +12,15 @@
   try {
 #define END_HANDLE_TH_ERRORS(errVar, retVal)                       \
   }                                                                \
+  catch (const torch::Error& e) {                                  \
+    auto msg = e.what_without_backtrace();                         \
+    auto err = Torch_Error{                                        \
+        .message = new char[strlen(msg)+1],                        \
+    };                                                             \
+    std::strcpy(err.message, msg);                                 \
+    *errVar = err;                                                 \
+    return retVal;                                                 \
+  }                                                                \
   catch (const std::exception& e) {                                \
     auto msg = e.what();                                           \
     auto err = Torch_Error{                                        \
@@ -263,6 +272,7 @@ char** Torch_JITModuleGetMethodNames(Torch_JITModuleContext ctx, size_t* len) {
 }
 
 Torch_IValue Torch_JITModuleMethodRun(Torch_JITModuleMethodContext ctx, Torch_IValue* inputs, size_t input_size, Torch_Error* error) {
+    HANDLE_TH_ERRORS
     auto met = (Torch_JITModule_Method*)ctx;
 
     std::vector<torch::IValue> inputs_vec;
@@ -274,6 +284,7 @@ Torch_IValue Torch_JITModuleMethodRun(Torch_JITModuleMethodContext ctx, Torch_IV
 
     auto res = met->run(inputs_vec);
     return Torch_ConvertIValueToTorchIValue(res);
+    END_HANDLE_TH_ERRORS(error, Torch_IValue{})
 }
 
 

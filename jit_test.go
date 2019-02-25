@@ -89,6 +89,43 @@ func Test_InvalidTorchScript(t *testing.T) {
 	}
 }
 
+func Test_GetMethodMissingMethod(t *testing.T) {
+	module, err := CompileTorchScript(sumScript)
+	if err != nil {
+		t.Error(err)
+	}
+
+	_, err = module.GetMethod("this_wont_exist")
+	if err == nil {
+		t.Error("should return an error")
+	}
+
+	if err.Error() != "Method 'this_wont_exist' is not defined" {
+		t.Error("wrong message returned", err)
+	}
+}
+
+func Test_RunWithWrongArguments(t *testing.T) {
+	module, err := CompileTorchScript(sumScript)
+	if err != nil {
+		t.Error(err)
+	}
+
+	method, err := module.GetMethod("sum")
+	if err != nil {
+		t.Error(err)
+	}
+
+	_, err = method.Run()
+	if err == nil {
+		t.Error("should return error")
+	}
+
+	if err.Error() != "sum() is missing value for argument 'a'. Declaration: sum(Tensor a, Tensor b) -> Tensor" {
+		t.Error("wrong message returned", err)
+	}
+}
+
 func Test_TupleInput(t *testing.T) {
 	module, err := CompileTorchScript(tupleInput)
 	if err != nil {

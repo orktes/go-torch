@@ -140,10 +140,16 @@ func (m *JITModuleMethod) Run(inputs ...interface{}) (interface{}, error) {
 
 	defer freeIValues(ivalues)
 
+	var iValuePtr *C.Torch_IValue
+
+	if len(ivalues) > 0 {
+		iValuePtr = (*C.Torch_IValue)(&ivalues[0])
+	}
+
 	var cErr C.Torch_Error
 	ival := C.Torch_JITModuleMethodRun(
 		m.context,
-		(*C.Torch_IValue)(&ivalues[0]),
+		iValuePtr,
 		C.ulong(len(ivalues)),
 		&cErr,
 	)
