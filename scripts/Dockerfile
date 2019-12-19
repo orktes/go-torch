@@ -9,9 +9,9 @@ RUN apt-get update && \
   rm -fr /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 RUN cd /opt/ && \
-  wget -q https://download.pytorch.org/libtorch/cu101/libtorch-cxx11-abi-shared-with-deps-1.3.1.zip && \
-  unzip libtorch-cxx11-abi-shared-with-deps-1.3.1.zip && \
-  rm libtorch-cxx11-abi-shared-with-deps-1.3.1.zip
+  wget -q https://download.pytorch.org/libtorch/cpu/libtorch-shared-with-deps-1.0.1.zip && \
+  unzip libtorch-shared-with-deps-1.0.1.zip && \
+  rm libtorch-shared-with-deps-1.0.1.zip
 
 RUN echo "$PYTORCH_DIST_DIR/lib" >> /etc/ld.so.conf.d/libtorch.conf && ldconfig
 ENV LD_LIBRARY_PATH /opt/libtorch/lib:${LD_LIBRARY_PATH}
