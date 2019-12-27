@@ -221,9 +221,17 @@ Torch_JITModuleContext Torch_CompileTorchScript(char* cstring_script, Torch_Erro
 
 Torch_JITModuleContext Torch_LoadJITModule(char* cstring_path, Torch_Error* error) {
     HANDLE_TH_ERRORS
+
+    torch::Device device(torch::kCPU);
+    if (torch::cuda::is_available())
+    {
+        std::cout << "CUDA is available! Loading on GPU." << std::endl;
+        device = torch::Device(torch::kCUDA);
+    }
+
     std::string module_path(cstring_path);
     auto mod = new Torch_JITModule();
-    mod->module = torch::jit::load(module_path);
+    mod->module = torch::jit::load(module_path, std::move(device));
 
     return (void *)mod;
     END_HANDLE_TH_ERRORS(error, NULL)
