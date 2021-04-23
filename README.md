@@ -1,3 +1,5 @@
+EVERYHING IS REALLY OUT OF DATE. FOR A MORE UP-TO-DATE BINDINGS I RECOMMEND CHECKING OUT https://github.com/wangkuiyi/gotorch OR OTHER PACKAGES AVAILABLE.
+
 WORK IN PROGRESS... USE AT OWN RISK :-)
 
 [![Build Status](https://travis-ci.org/orktes/go-torch.svg?branch=master)](https://travis-ci.org/orktes/go-torch)
